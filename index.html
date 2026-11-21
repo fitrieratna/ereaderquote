@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Marginalia</title>
+<meta name="description" content="Keep every e-reader highlight and turn it into quote cards for Instagram, TikTok, Threads and X.">
+<meta name="theme-color" content="#EEF0EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11141A" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Marginalia">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap">
+<style>
+/* Layout: phone-first app shell — sticky tab bar, one pane at a time; on wide screens Library and Studio sit side by side. */
+:root{
+  --bg:#EEF0EC; --surface:#FAFBF8; --ink:#1A1E27; --muted:#5D6470; --line:#D5D9D2; --btn:#1A1E27; --btn-fg:#FAFBF8;
+  --hl-yellow:#F6D44A; --hl-pink:#F48FB5; --hl-blue:#86BDF2; --hl-green:#93D79A; --hl-ink:#1A1E27;
+  --danger:#B3261E; --ok:#2E7D4F;
+  --f-quote:"Newsreader",Georgia,"Times New Roman",serif;
+  --f-ui:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11141A; --surface:#1A1E26; --ink:#E7E9EC; --muted:#9AA1AC; --line:#2C323C; --btn:#E7E9EC; --btn-fg:#11141A;
+  --hl-yellow:#C9A92B; --hl-pink:#C76A90; --hl-blue:#5A93C9; --hl-green:#5FA868; --hl-ink:#0E1015; --danger:#F2867E; --ok:#7CCB98; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11141A; --surface:#1A1E26; --ink:#E7E9EC; --muted:#9AA1AC; --line:#2C323C; --btn:#E7E9EC; --btn-fg:#11141A;
+  --hl-yellow:#C9A92B; --hl-pink:#C76A90; --hl-blue:#5A93C9; --hl-green:#5FA868; --hl-ink:#0E1015; --danger:#F2867E; --ok:#7CCB98; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 10px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{font-family:var(--f-quote);font-weight:600;font-size:26px;margin:0;letter-spacing:-.01em}
+.brand h1 span{background:linear-gradient(transparent 58%,var(--hl-yellow) 58%,var(--hl-yellow) 92%,transparent 92%)}
+.count{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+nav.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+nav.tabs button{border:0;background:none;color:var(--muted);font:500 14px var(--f-ui);padding:7px 14px;border-radius:999px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--btn);color:var(--btn-fg)}
+.statusrow{width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}
+.status{font-family:var(--f-mono);font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;min-width:0}
+.auth{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px}
+.auth .who{color:var(--muted)}
+.auth button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:5px 10px;font-size:13px}
+.auth form{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.auth input{width:min(240px,60vw);padding:6px 9px;font-size:14px}
+main{display:grid;gap:24px;padding-top:20px}
+@media (min-width:960px){main.split{grid-template-columns:minmax(0,1fr) minmax(0,460px)}}
+h2{font-family:var(--f-quote);font-weight:600;font-size:22px;margin:0;text-wrap:balance}
+.label{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+button,.btn{font:500 14px var(--f-ui);cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:9px 14px;border-radius:10px;text-decoration:none}
+.btn.primary{background:var(--btn);color:var(--btn-fg);border-color:var(--btn)}
+.btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+input[type=text],input[type=search],select,textarea{font:15px var(--f-ui);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%;min-width:0}
+textarea{resize:vertical;font-family:var(--f-quote);font-size:16px;line-height:1.45}
+/* Library */
+.filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:12px}
+.filters .search{grid-column:1/-1}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 11px;font:500 13px var(--f-ui);display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--btn);color:var(--btn-fg);border-color:var(--btn)}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.15)}
+.libhead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;justify-content:space-between}
+.list{display:flex;flex-direction:column;margin-top:14px;border-top:1px solid var(--line)}
+.item{padding:16px 2px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.item.sel{background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.q{font-family:var(--f-quote);font-size:18px;line-height:1.5;margin:0;display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden}
+.q mark{color:inherit;padding:0 .08em;-webkit-box-decoration-break:clone;box-decoration-break:clone;background:linear-gradient(transparent 40%,var(--m) 40%,var(--m) 94%,transparent 94%)}
+.note{font-size:13px;color:var(--muted);border-left:2px solid var(--line);padding-left:10px}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:13px;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:500;font-style:italic;font-family:var(--f-quote);font-size:15px}
+.acts{display:flex;flex-wrap:wrap;gap:6px}
+.acts button{border:1px solid var(--line);background:none;color:var(--ink);border-radius:8px;padding:5px 10px;font-size:13px}
+.acts button.make{background:var(--btn);color:var(--btn-fg);border-color:var(--btn)}
+.acts button.on{color:var(--ink);background:var(--hl-yellow);border-color:transparent}
+.acts .del-yes{color:var(--danger);border-color:var(--danger)}
+.tag{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;border:1px dashed var(--muted);border-radius:4px;padding:1px 5px;color:var(--muted)}
+.empty{padding:20px;border:1px dashed var(--line);border-radius:12px;display:grid;gap:10px}
+/* Studio */
+.studio{display:grid;gap:14px;align-content:start}
+@media (min-width:960px){.studio{position:sticky;top:calc(env(safe-area-inset-top,0px) + 92px)}}
+.stage{background:repeating-linear-gradient(45deg,var(--surface) 0 10px,var(--bg) 10px 20px);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;justify-content:center}
+#card{max-width:100%;max-height:62vh;height:auto;width:auto;box-shadow:0 8px 28px rgba(0,0,0,.18);border-radius:4px;display:block}
+.row{display:grid;gap:6px}
+.share{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.share .btn{flex-direction:column;gap:2px;padding:9px 4px;font-size:13px}
+.share .btn small{font-family:var(--f-mono);font-size:10px;color:var(--muted)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.next{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;display:grid;gap:8px;font-size:14px}
+.next a{color:var(--ink);font-weight:600}
+.preview-img{max-width:100%;border-radius:6px;border:1px solid var(--line)}
+/* Import */
+.imp{display:grid;gap:22px;max-width:760px}
+ol.steps{margin:0;padding-left:22px;display:grid;gap:8px}
+ol.steps code,.mono{font-family:var(--f-mono);font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:28px 18px;text-align:center;display:grid;gap:10px;justify-items:center;background:var(--surface)}
+.drop.over{border-color:var(--ink)}
+.bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;width:100%}
+.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .2s}
+.card-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--btn);color:var(--btn-fg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1><span>Marginalia</span></h1><span class="count" id="count">—</span></div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-library" data-view="library" aria-selected="true">Library</button>
+      <button role="tab" id="tab-studio" data-view="studio" aria-selected="false">Quote studio</button>
+      <button role="tab" id="tab-import" data-view="import" aria-selected="false">Import</button>
+    </nav>
+    <div class="statusrow"><div class="status" id="status">Connecting to your library…</div><div class="auth" id="auth"></div></div>
+  </header>
+
+  <main id="main" class="split">
+    <!-- LIBRARY -->
+    <section id="pane-library">
+      <div class="libhead">
+        <h2>Your highlights</h2>
+        <div class="chips">
+          <button class="btn" id="shuffle" type="button">Shuffle a quote</button>
+        </div>
+      </div>
+      <div class="filters">
+        <input class="search" type="search" id="q" placeholder="Search words, books, authors">
+        <select id="book" aria-label="Book"><option value="">All books</option></select>
+        <select id="sort" aria-label="Sort"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="book">By book</option></select>
+      </div>
+      <div class="chips" style="margin-top:10px" id="colorFilter"></div>
+      <div id="examplesNote" class="empty" hidden style="margin-top:14px">
+        <strong>These are example highlights.</strong>
+        <span class="muted">Import <span class="mono">KoboReader.sqlite</span> from your Kobo or <span class="mono">My Clippings.txt</span> from your Xteink X4 Pro to load your own. Sign in to keep them in your private library on every device.</span>
+        <div><button class="btn primary" type="button" data-goto="import">Import highlights</button></div>
+      </div>
+      <div class="list" id="list"></div>
+    </section>
+
+    <!-- STUDIO -->
+    <section id="pane-studio" class="studio">
+      <div class="libhead"><h2>Quote studio</h2><span class="label" id="dims">1080 × 1920</span></div>
+      <div class="stage"><canvas id="card" width="1080" height="1920" aria-label="Quote card preview"></canvas></div>
+
+      <div class="row"><span class="label">Share to</span>
+        <div class="share">
+          <button class="btn" type="button" data-share="instagram">Instagram<small>4:5 / story</small></button>
+          <button class="btn" type="button" data-share="tiktok">TikTok<small>9:16</small></button>
+          <button class="btn" type="button" data-share="threads">Threads<small>4:5</small></button>
+          <button class="btn" type="button" data-share="x">X<small>16:9</small></button>
+        </div>
+      </div>
+      <div id="next" class="next" hidden></div>
+
+      <div class="row"><span class="label">Size</span><div class="chips" id="fmtChips"></div></div>
+      <div class="row"><span class="label">Style</span><div class="chips" id="tplChips"></div></div>
+      <div class="two">
+        <div class="row"><span class="label">Typeface</span><div class="chips" id="fontChips"></div></div>
+        <div class="row"><span class="label">Highlight colour</span><div class="chips" id="hlChips"></div></div>
+      </div>
+      <div class="row"><label class="label" for="edit">Text on the card (edit to trim; your saved highlight stays as is)</label><textarea id="edit" rows="4"></textarea></div>
+      <div class="two">
+        <div class="row"><label class="label" for="handle">Your handle</label><input type="text" id="handle" placeholder="@yourname"></div>
+        <div class="row"><label class="label" for="showBook">Book line</label>
+          <select id="showBook"><option value="short">Title (up to 10 words) + author</option><option value="both">Full title + author</option><option value="author">Author only</option><option value="none">Hide</option></select></div>
+      </div>
+      <div class="chips">
+        <button class="btn primary" type="button" id="saveImg">Save image</button>
+        <button class="btn" type="button" id="copyCap">Copy caption</button>
+      </div>
+      <textarea id="caption" rows="4" aria-label="Caption" readonly hidden></textarea>
+    </section>
+
+    <!-- IMPORT -->
+    <section id="pane-import" class="imp" hidden>
+      <div id="impProgress" hidden class="card-box row"><span id="impMsg" class="muted"></span><div class="bar"><i id="impBar"></i></div></div>
+      <div class="card-box">
+        <h2>Import from your Kobo Libra Colour</h2>
+        <ol class="steps">
+          <li>Plug the Kobo into a computer with the USB cable and tap <b>Connect</b> on the e-reader.</li>
+          <li>Open the <b>KOBOeReader</b> drive and turn on hidden files: on a Mac press <span class="mono">⌘ ⇧ .</span> in Finder; on Windows choose <b>View → Show → Hidden items</b>.</li>
+          <li>Open the <span class="mono">.kobo</span> folder and pick <span class="mono">KoboReader.sqlite</span> below. Want to do it from your phone? Copy that file to your phone or cloud drive first, then pick it here.</li>
+          <li>Eject the Kobo when you are done. Import again any time: only new highlights are added.</li>
+        </ol>
+        <label class="drop" id="drop" for="file">
+          <strong>Drop KoboReader.sqlite here</strong>
+          <span class="muted">or</span>
+          <span class="btn primary">Choose file</span>
+          <input type="file" id="file" accept=".sqlite,.db,.sqlite3,.json,application/x-sqlite3,application/octet-stream" hidden>
+        </label>
+      </div>
+
+      <div class="card-box">
+        <h2>Import from your Xteink X4 Pro</h2>
+        <ol class="steps">
+          <li>Highlights need the <b>CrossPoint Reader</b> firmware. In a book, select text and save it as a clipping. CrossPoint adds every clipping to <span class="mono">My Clippings.txt</span> on the SD card.</li>
+          <li>Connect the X4 Pro to a computer and turn on <b>USB Drive</b> mode, or take out the microSD card and use a card reader.</li>
+          <li>Pick <span class="mono">My Clippings.txt</span> from the top level of the card below. On your phone, copy the file to the phone or a cloud drive first. A Kindle's My Clippings.txt works too.</li>
+          <li>Import again any time: only new highlights are added. Deleting a clipping on the X4 Pro doesn't remove it from the file, so delete it here as well.</li>
+        </ol>
+        <label class="drop" for="file2">
+          <strong>Drop My Clippings.txt here</strong>
+          <span class="muted">or</span>
+          <span class="btn primary">Choose file</span>
+          <input type="file" id="file2" accept=".txt,.json,text/plain,application/json" hidden>
+        </label>
+      </div>
+
+      <form class="card-box" id="manual">
+        <h2>Add a highlight by hand</h2>
+        <div class="row"><label class="label" for="m-text">Highlight</label><textarea id="m-text" rows="3" required></textarea></div>
+        <div class="two">
+          <div class="row"><label class="label" for="m-book">Book</label><input type="text" id="m-book"></div>
+          <div class="row"><label class="label" for="m-author">Author</label><input type="text" id="m-author"></div>
+        </div>
+        <div class="chips" id="m-colors"></div>
+        <div><button class="btn primary" type="submit">Add to library</button></div>
+      </form>
+
+      <div class="card-box">
+        <h2>Backup</h2>
+        <p class="muted" style="margin:0">Save every highlight as a JSON file you can keep. To restore it, or to move your library to another copy of Marginalia, drop the file into either import box above.</p>
+        <div><button class="btn" type="button" id="backup">Save backup</button></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const COLORS = [
+  {k:'yellow', name:'Yellow', css:'--hl-yellow', hex:'#F6D44A'},
+  {k:'pink',   name:'Pink',   css:'--hl-pink',   hex:'#F48FB5'},
+  {k:'blue',   name:'Blue',   css:'--hl-blue',   hex:'#86BDF2'},
+  {k:'green',  name:'Green',  css:'--hl-green',  hex:'#93D79A'},
+];
+const KOBO_COLOR = ['yellow','pink','blue','green']; // Bookmark.Color 0-3 on Kobo colour devices
+const FMT = {
+  story:{w:1080,h:1920,name:'Story 9:16'},
+  post:{w:1080,h:1350,name:'Post 4:5'},
+  square:{w:1080,h:1080,name:'Square'},
+  wide:{w:1600,h:900,name:'Wide 16:9'},
+};
+const TPL = {marker:'Marker', eink:'E-ink page', night:'Night', swatch:'Swatch', index:'Index card', sticky:'Sticky note', typewriter:'Typewriter', dusk:'Dusk', poster:'Poster', frame:'Frame'};
+const FONTS = {serif:'Serif', sans:'Sans', mono:'Mono'};
+const FONT_FAMILY = {serif:'"Newsreader", Georgia, serif', sans:'"Instrument Sans", system-ui, sans-serif', mono:'"JetBrains Mono", ui-monospace, monospace'};
+
+const EXAMPLES = [
+  {id:'ex1', text:'I have been bent and broken, but — I hope — into a better shape.', book:'Great Expectations', author:'Charles Dickens', color:'yellow', created:'2026-10-02T21:14:00Z'},
+  {id:'ex2', text:'I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach.', book:'Walden', author:'Henry David Thoreau', color:'green', created:'2026-09-18T07:40:00Z', note:'Reread before the trip.'},
+  {id:'ex3', text:'You have power over your mind — not outside events. Realize this, and you will find strength.', book:'Meditations', author:'Marcus Aurelius', color:'blue', created:'2026-08-30T22:05:00Z'},
+  {id:'ex4', text:'I declare after all there is no enjoyment like reading! How much sooner one tires of any thing than of a book!', book:'Pride and Prejudice', author:'Jane Austen', color:'pink', created:'2026-08-11T19:22:00Z'},
+  {id:'ex5', text:'It is never too late to be what you might have been.', book:'Middlemarch', author:'George Eliot', color:'yellow', created:'2026-07-04T16:10:00Z'},
+].map(e => ({...e, example:true, fav:false}));
+
+const store = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem('marg:'+k)); localStorage.setItem('marg:'+k, JSON.stringify(v)); } catch(e) { return null; } };
+
+const S = {
+  uid:null, email:'', authOpen:false, authSent:'',
+  items: [], mode:'loading', db:null, col:null,
+  view:'library', q:'', book:'', sort:'new', color:'', favOnly:false,
+  sel:null, fmt: store('fmt') || 'story', tpl: store('tpl') || 'marker', font: store('font') || 'serif', hl:null,
+  handle: store('handle') || '', showBook: store('showBook') || 'short', editText:'', confirmDel:null, mColor:'yellow',
+};
+
+/* ---------- utils ---------- */
+// Tidy the spacing e-readers leave around punctuation ("say it , they" -> "say it, they"). Display only; stored text is untouched.
+const cleanText = s => String(s ?? '')
+  .replace(/[ \t\u00A0]+([,.;:!?)\]}…%”’])/g, '$1')
+  .replace(/([“‘(\[{])[ \t\u00A0]+/g, '$1')
+  .replace(/(\w)[ \t\u00A0]*([’'])[ \t\u00A0]*(s|t|d|m|ll|re|ve)\b/gi, '$1$2$3')
+  .replace(/^[\s,.;:]+/, '')
+  .replace(/[ \t\u00A0]{2,}/g, ' ')
+  .trim();
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDate = d => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}); };
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true, 3200); }
+const safeId = s => 'h_' + String(s).replace(/[^A-Za-z0-9_-]/g,'_').slice(0,120);
+const all = () => S.items.length ? S.items : EXAMPLES;
+const colorHex = k => (COLORS.find(c=>c.k===k)||COLORS[0]).hex;
+
+/* ---------- storage: Supabase (signed in) or this browser (signed out) ---------- */
+const CFG = window.MARGINALIA_CONFIG || {};
+const configured = !!(CFG.supabaseUrl && CFG.supabaseAnonKey && !/YOUR_/.test(CFG.supabaseUrl + CFG.supabaseAnonKey));
+const sb = configured && window.supabase ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey) : null;
+const TABLE = 'highlights';
+const COLS = 'id,text,note,book,author,color,created,fav,source';
+const row = i => ({user_id:S.uid, id:i.id, text:i.text, note:i.note||'', book:i.book||'', author:i.author||'',
+  color:i.color||'yellow', created:i.created||new Date().toISOString(), fav:!!i.fav, source:i.source||''});
+
+function setStatus(){
+  const el = $('#status');
+  if (S.mode==='loading') el.textContent = 'Loading your library…';
+  else if (S.mode==='cloud') el.textContent = 'Synced to your account · every device';
+  else el.textContent = sb ? 'Saved in this browser only · sign in to sync' : 'Saved in this browser only';
+  const n = S.items.length, books = new Set(S.items.map(i=>i.book)).size;
+  $('#count').textContent = n ? `${n} highlights · ${books} books` : 'no highlights yet';
+}
+function renderAuth(){
+  const el = $('#auth');
+  if (!sb) { el.innerHTML = ''; return; }
+  if (S.uid) { el.innerHTML = `<span class="who">${esc(S.email)}</span><button type="button" id="signOut">Sign out</button>`; return; }
+  if (S.authSent) { el.innerHTML = `<span class="who">Check ${esc(S.authSent)} for your sign-in link.</span><button type="button" id="authBack">Use another email</button>`; return; }
+  el.innerHTML = S.authOpen
+    ? `<form id="authForm"><input type="email" id="authEmail" placeholder="you@example.com" required autocomplete="email"><button type="submit">Email me a sign-in link</button></form>`
+    : `<button type="button" id="authOpen">Sign in to sync</button>`;
+}
+$('#auth').addEventListener('click', async e => {
+  const id = e.target.id;
+  if (id==='authOpen') { S.authOpen = true; renderAuth(); $('#authEmail').focus(); }
+  if (id==='authBack') { S.authSent = ''; S.authOpen = true; renderAuth(); }
+  if (id==='signOut') { await sb.auth.signOut(); }
+});
+$('#auth').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('#authEmail').value.trim(); if (!email) return;
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+  if (error) { toast('Could not send the link: ' + error.message); return; }
+  S.authSent = email; renderAuth();
+});
+
+async function boot(){
+  render(); renderAuth();
+  if (!sb) return useLocal();
+  const { data } = await sb.auth.getSession();
+  await onSession(data.session);
+  sb.auth.onAuthStateChange((_event, session) => {
+    if ((session?.user?.id || null) !== S.uid) onSession(session);
+  });
+}
+function useLocal(){
+  S.uid = null; S.email = ''; S.mode = 'local';
+  S.items = store('items') || [];
+  render(); renderAuth();
+}
+async function onSession(session){
+  if (!session) return useLocal();
+  S.uid = session.user.id; S.email = session.user.email || ''; S.authSent = ''; S.authOpen = false;
+  S.mode = 'loading'; render(); renderAuth();
+  if (location.hash.includes('access_token')) history.replaceState(null, '', location.pathname);
+  try {
+    const local = store('items') || [];
+    if (local.length) { // highlights made before signing in move into the account
+      await upsertMany(local);
+      store('items', []);
+      toast(`Moved ${local.length} highlights from this browser into your account`);
+    }
+    await loadCloud();
+  } catch(e) { console.error(e); toast('Could not reach your library: ' + (e.message || 'network error')); S.mode = 'cloud'; render(); }
+}
+async function loadCloud(){
+  const out = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await sb.from(TABLE).select(COLS).order('created', {ascending:false}).range(from, from + 999);
+    if (error) throw error;
+    out.push(...data);
+    if (data.length < 1000) break;
+  }
+  S.items = out; S.mode = 'cloud'; render();
+}
+async function upsertMany(items, onProgress){
+  for (let k = 0; k < items.length; k += 500) {
+    const { error } = await sb.from(TABLE).upsert(items.slice(k, k + 500).map(row), { onConflict: 'user_id,id', ignoreDuplicates: true });
+    if (error) throw error;
+    onProgress && onProgress(Math.min(1, (k + 500) / items.length));
+  }
+}
+function localApply(fn){ fn(); if (S.mode!=='cloud') store('items', S.items); render(); }
+async function putItem(item){
+  if (S.mode==='cloud') { const { error } = await sb.from(TABLE).upsert(row(item), { onConflict: 'user_id,id' }); if (error) throw error; }
+  localApply(() => { const i = S.items.findIndex(x=>x.id===item.id); if (i>=0) S.items[i] = item; else S.items.unshift(item); });
+}
+async function patchItem(id, patch){
+  if (S.mode==='cloud') { const { error } = await sb.from(TABLE).update(patch).eq('id', id); if (error) throw error; }
+  localApply(() => Object.assign(S.items.find(x=>x.id===id) || {}, patch));
+}
+async function removeItem(id){
+  if (S.mode==='cloud') { const { error } = await sb.from(TABLE).delete().eq('id', id); if (error) throw error; }
+  localApply(() => { S.items = S.items.filter(x=>x.id!==id); });
+}
+function saveBlob(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---------- library rendering ---------- */
+function filtered(){
+  const q = S.q.trim().toLowerCase();
+  let r = all().filter(i =>
+    (!S.book || i.book===S.book) && (!S.color || i.color===S.color) && (!S.favOnly || i.fav) &&
+    (!q || (i.text+' '+i.book+' '+i.author+' '+(i.note||'')).toLowerCase().includes(q)));
+  const t = i => new Date(i.created||0).getTime();
+  if (S.sort==='new') r.sort((a,b)=>t(b)-t(a));
+  else if (S.sort==='old') r.sort((a,b)=>t(a)-t(b));
+  else r.sort((a,b)=>(a.book||'').localeCompare(b.book||'') || t(a)-t(b));
+  return r;
+}
+function renderFilters(){
+  const books = [...new Set(all().map(i=>i.book).filter(Boolean))].sort();
+  const sel = $('#book');
+  sel.innerHTML = '<option value="">All books</option>' + books.map(b=>`<option${b===S.book?' selected':''}>${esc(b)}</option>`).join('');
+  $('#colorFilter').innerHTML =
+    `<button class="chip" type="button" data-color="" aria-pressed="${!S.color&&!S.favOnly}">All</button>` +
+    COLORS.map(c=>`<button class="chip" type="button" data-color="${c.k}" aria-pressed="${S.color===c.k}"><span class="dot" style="background:var(${c.css})"></span>${c.name}</button>`).join('') +
+    `<button class="chip" type="button" data-fav aria-pressed="${S.favOnly}">★ Favourites</button>`;
+}
+function renderList(){
+  $('#examplesNote').hidden = !(S.items.length===0 && S.mode!=='loading');
+  const r = filtered();
+  if (!r.length) { $('#list').innerHTML = `<div class="empty" style="margin-top:14px">No highlights match. Try another word or clear the filters.</div>`; return; }
+  $('#list').innerHTML = r.slice(0,400).map(i => `
+    <article class="item${S.sel&&S.sel.id===i.id?' sel':''}" data-id="${esc(i.id)}">
+      <p class="q">${esc(cleanText(i.text))}</p>
+      ${i.note?`<div class="note">${esc(i.note)}</div>`:''}
+      <div class="meta"><span class="dot" style="background:var(--hl-${esc(i.color||'yellow')})" title="${esc(i.color||'yellow')} highlight"></span><b>${esc(i.book||'Unknown book')}</b><span>${esc(i.author||'')}</span><span>${fmtDate(i.created)}</span>${i.example?'<span class="tag">Example</span>':''}</div>
+      <div class="acts">
+        <button type="button" class="make" data-act="make">Make quote</button>
+        ${i.example?'':`<button type="button" data-act="fav" class="${i.fav?'on':''}" aria-pressed="${!!i.fav}">${i.fav?'★ Favourite':'☆ Favourite'}</button>`}
+        <button type="button" data-act="copy">Copy text</button>
+        ${i.example?'':(S.confirmDel===i.id
+          ? `<button type="button" class="del-yes" data-act="delyes">Delete for good</button><button type="button" data-act="delno">Keep</button>`
+          : `<button type="button" data-act="del">Delete</button>`)}
+      </div>
+    </article>`).join('') + (r.length>400?`<p class="muted">Showing 400 of ${r.length}. Search or pick a book to narrow it down.</p>`:'');
+}
+
+/* ---------- studio ---------- */
+function chips(el, obj, cur, attr){
+  $(el).innerHTML = Object.entries(obj).map(([k,v]) => `<button class="chip" type="button" data-${attr}="${k}" aria-pressed="${k===cur}">${typeof v==='string'?v:v.name}</button>`).join('');
+}
+function renderStudio(){
+  if (!S.sel || !all().some(i=>i.id===S.sel.id)) selectItem(all()[0], false);
+  chips('#fmtChips', FMT, S.fmt, 'fmt');
+  chips('#tplChips', TPL, S.tpl, 'tpl');
+  chips('#fontChips', FONTS, S.font, 'font');
+  const hl = S.hl || S.sel?.color || 'yellow';
+  $('#hlChips').innerHTML = COLORS.map(c=>`<button class="chip" type="button" data-hl="${c.k}" aria-pressed="${c.k===hl}" aria-label="${c.name}"><span class="dot" style="background:${c.hex}"></span></button>`).join('');
+  $('#handle').value = S.handle; $('#showBook').value = S.showBook;
+  draw();
+}
+function selectItem(item, go=true){
+  if (!item) return;
+  S.sel = item; S.hl = null; S.editText = cleanText(item.text); $('#edit').value = S.editText;
+  $('#next').hidden = true;
+  if (go && !isWide()) setView('studio'); else renderList();
+  renderStudio();
+}
+const isWide = () => matchMedia('(min-width:960px)').matches;
+
+function wrap(ctx, text, maxW){
+  const out = [];
+  for (const para of text.split(/\n+/)) {
+    const words = para.split(/\s+/).filter(Boolean); let line = '';
+    for (const w of words) {
+      const t = line ? line+' '+w : w;
+      if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t;
+    }
+    if (line) out.push(line);
+  }
+  return out;
+}
+function fit(ctx, text, family, weight, style, maxW, maxH, maxSize, minSize, lh){
+  for (let s = maxSize; s >= minSize; s -= 2) {
+    ctx.font = `${style} ${weight} ${s}px ${family}`;
+    const lines = wrap(ctx, text, maxW);
+    if (lines.length * s * lh <= maxH && lines.every(l => ctx.measureText(l).width <= maxW)) return {s, lines};
+  }
+  ctx.font = `${style} ${weight} ${minSize}px ${family}`;
+  return {s:minSize, lines: wrap(ctx, text, maxW)};
+}
+function shade(hex, amt){
+  const n = parseInt(hex.slice(1),16); let r=n>>16, g=n>>8&255, b=n&255;
+  const t = amt<0 ? 0 : 255, p = Math.abs(amt);
+  r=Math.round(r+(t-r)*p); g=Math.round(g+(t-g)*p); b=Math.round(b+(t-b)*p);
+  return `rgb(${r},${g},${b})`;
+}
+// Titles of up to 10 words stay whole. Longer ones keep only the words before the first punctuation break
+// (colon, semicolon, dash, pipe, bracket, or after ? / !).
+function shortTitle(b){
+  if (b.trim().split(/\s+/).length <= 10) return b;
+  const m = b.match(/^(.*?)(?:\s*[:;|—–]\s*|\s+-\s+|\s*[(\[]|(?<=[?!])\s+)/);
+  const t = m && m[1].trim();
+  return t && t.length >= 3 ? t : b;
+}
+function rng(seed){ return () => (seed = (seed*16807) % 2147483647) / 2147483647; }
+function draw(){
+  const it = S.sel; if (!it) return;
+  const {w:W, h:H} = FMT[S.fmt];
+  const cv = $('#card'), c = cv.getContext('2d');
+  cv.width = W; cv.height = H;
+  $('#dims').textContent = `${W} × ${H}`;
+  const hl = colorHex(S.hl || it.color || 'yellow');
+  const T = S.tpl;
+  const text = (S.editText || cleanText(it.text)).trim();
+  const author = it.author || '', book = it.book || '';
+  const showT = (S.showBook==='both' || S.showBook==='short') && book, showA = S.showBook!=='none' && author;
+  const fontKey = T==='typewriter' ? 'mono' : S.font;
+  const fam = FONT_FAMILY[fontKey];
+  const P = {
+    marker:    {bg:'#F5F4EF', fg:'#1A1E27', sub:'#5D6470', align:'left'},
+    eink:      {bg:'#E6E6E0', fg:'#222222', sub:'#6B6B66', align:'left'},
+    night:     {bg:'#14171E', fg:'#F1F2F4', sub:'#9AA1AC', align:'left', italic:true, weight:400},
+    swatch:    {bg:hl,        fg:'#15171C', sub:'rgba(21,23,28,.72)', align:'left'},
+    index:     {bg:'#FBFAF5', fg:'#1E2A4A', sub:'#55607A', align:'left'},
+    sticky:    {bg:'#2A2E36', fg:'#1A1C21', sub:'rgba(26,28,33,.7)', align:'center'},
+    typewriter:{bg:'#EEE8DA', fg:'#2A2622', sub:'#6E665A', align:'left', weight:400},
+    dusk:      {bg:hl,        fg:'#FFFFFF', sub:'rgba(255,255,255,.8)', align:'center', italic:true, weight:400},
+    poster:    {bg:'#111317', fg:'#F4F4F2', sub:'#1A1C21', align:'left', weight:600},
+    frame:     {bg:'#FBFBF9', fg:'#1B1D22', sub:'#6A6F78', align:'center'},
+  }[T];
+  c.fillStyle = P.bg; c.fillRect(0,0,W,H);
+  c.textBaseline = 'alphabetic';
+  let R = {x:0, y:0, w:W, h:H};
+  let pad = Math.round(W * (S.fmt==='wide' ? 0.08 : 0.1));
+  let rotated = false;
+
+  // backgrounds
+  if (T==='dusk') {
+    const g = c.createLinearGradient(0, 0, W*0.35, H);
+    g.addColorStop(0, shade(hl, 0.1)); g.addColorStop(0.5, shade(hl, -0.4)); g.addColorStop(1, '#13151B');
+    c.fillStyle = g; c.fillRect(0,0,W,H);
+  }
+  if (T==='typewriter') { // paper fibres
+    const r = rng(11); c.fillStyle = 'rgba(90,70,40,.07)';
+    for (let i = 0; i < W*H/700; i++) c.fillRect(r()*W, r()*H, 1+r()*2.5, 1+r()*2.5);
+  }
+  if (T==='sticky') {
+    const side = Math.min(W, H) * 0.84;
+    R = {x:(W-side)/2, y:(H-side)/2, w:side, h:side};
+    c.save(); rotated = true;
+    c.translate(W/2, H/2); c.rotate(-0.025); c.translate(-W/2, -H/2);
+    c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = side*0.06; c.shadowOffsetY = side*0.025;
+    c.fillStyle = hl; c.fillRect(R.x, R.y, R.w, R.h);
+    c.shadowColor = 'transparent';
+    const g = c.createLinearGradient(0, R.y, 0, R.y+R.h); g.addColorStop(0,'rgba(255,255,255,.18)'); g.addColorStop(1,'rgba(0,0,0,.06)');
+    c.fillStyle = g; c.fillRect(R.x, R.y, R.w, R.h);
+    c.fillStyle = 'rgba(255,255,255,.5)'; c.fillRect(W/2 - side*0.14, R.y - side*0.035, side*0.28, side*0.075);
+    pad = Math.round(side * 0.1);
+  }
+  if (T==='frame') {
+    const u0 = Math.min(W,H), i1 = u0*0.04, i2 = u0*0.056;
+    c.strokeStyle = P.fg; c.lineWidth = Math.max(2, u0*0.003); c.strokeRect(i1, i1, W-2*i1, H-2*i1);
+    c.lineWidth = Math.max(1, u0*0.0015); c.strokeRect(i2, i2, W-2*i2, H-2*i2);
+    pad = Math.round(W * (S.fmt==='wide' ? 0.11 : 0.14));
+  }
+  if (T==='index') { c.fillStyle = hl; c.fillRect(0, 0, W, Math.min(W,H)*0.03); }
+
+  const u = Math.min(R.w, R.h);
+  const metaSize = Math.round(u*0.042);
+  const handleH = S.handle ? metaSize*1.6 : 0;
+  // book title wraps onto up to 2 lines; "short" drops the subtitle after a colon or dash
+  // never cut a title mid-phrase: "short" only drops what follows a punctuation break; long titles wrap and shrink
+  let titleLines = [], titleSize = metaSize;
+  if (showT) {
+    const bookText = S.showBook==='short' ? shortTitle(book) : book;
+    const tw = R.w - 2*pad;
+    for (const f of [1, .88, .76, .66]) {
+      titleSize = Math.round(metaSize*f);
+      c.font = `italic 400 ${titleSize}px "Newsreader", Georgia, serif`;
+      titleLines = wrap(c, bookText, tw);
+      if (titleLines.length <= 2) break;
+    }
+  }
+  const metaH = (showT||showA) ? metaSize*3.4 + titleSize*1.25*Math.max(0, titleLines.length-1) : 0;
+  const left = R.x + pad, boxW = R.w - 2*pad;
+  const cx = R.x + R.w/2;
+  let top = R.y + pad, bottom = R.y + R.h - pad - metaH - handleH;
+  let metaBase = R.y + R.h - pad - handleH, handleY = R.y + R.h - pad + metaSize*0.2;
+
+  if (T==='poster') {
+    const band = metaH + handleH + pad*1.2;
+    c.fillStyle = hl; c.fillRect(0, H - band, W, band);
+    bottom = H - band - pad*0.5;
+    metaBase = H - pad*0.6 - handleH; handleY = H - pad*0.6 + metaSize*0.2;
+  }
+  if (T==='eink') {
+    c.fillStyle = P.sub; c.font = `500 ${Math.round(metaSize*.6)}px "JetBrains Mono", monospace`;
+    c.textAlign = 'center';
+    c.fillText((book||'Highlight').toUpperCase().slice(0,48), W/2, pad*0.9);
+    c.fillRect(pad, pad*1.15, W-2*pad, 2);
+    top = pad*1.7;
+  }
+  if (T==='night' || T==='swatch') {
+    c.fillStyle = T==='night' ? hl : 'rgba(21,23,28,.85)';
+    c.font = `600 ${Math.round(u*0.26)}px "Newsreader", Georgia, serif`;
+    c.textAlign = 'left';
+    c.fillText('“', left - u*0.01, top + u*0.2);
+    top += u*0.2;
+  }
+  if (T==='frame') {
+    c.fillStyle = hl; c.font = `600 ${Math.round(u*0.16)}px "Newsreader", Georgia, serif`;
+    c.textAlign = 'center'; c.fillText('“', cx, top + u*0.11);
+    top += u*0.12;
+  }
+
+  const lh = T==='index' ? 1.55 : T==='poster' ? 1.14 : fontKey==='mono' ? 1.45 : 1.32;
+  let maxSize = u * (S.fmt==='wide' ? 0.075 : 0.085);
+  if (T==='poster') maxSize *= 1.3;
+  if (T==='sticky') maxSize *= 1.25;
+  const weight = P.weight || (fontKey==='mono' ? 400 : 500);
+  const style = P.italic && fontKey==='serif' ? 'italic' : 'normal';
+  const boxH = bottom - top - u*0.03;
+  const {s, lines} = fit(c, text, fam, weight, style, boxW, boxH, Math.round(maxSize), Math.round(u*0.026), lh);
+  const step = s*lh, blockH = lines.length * step;
+  let y = top + Math.max(0, (boxH - blockH)/2) + s;
+
+  if (T==='index') { // ruled lines that sit under each line of text, plus the red margin
+    c.fillStyle = 'rgba(110,150,205,.45)';
+    let ry = y + s*0.3; while (ry - step > R.y + Math.min(W,H)*0.06) ry -= step;
+    for (; ry < R.y + R.h; ry += step) c.fillRect(0, ry, W, Math.max(2, u*0.0025));
+    c.fillStyle = 'rgba(214,72,72,.6)'; c.fillRect(left - pad*0.35, 0, Math.max(2, u*0.003), H);
+  }
+
+  const center = P.align==='center';
+  const x = center ? cx : left;
+  c.textAlign = center ? 'center' : 'left';
+  const jit = rng(5);
+  for (const line of lines) {
+    const lw = c.measureText(line).width, lx = center ? x - lw/2 : x;
+    if (T==='marker') {
+      c.fillStyle = hl; c.globalAlpha = .85;
+      const bt = y - s*0.62, bh = s*0.78;
+      c.beginPath();
+      c.moveTo(lx - s*0.12, bt + s*0.04); c.lineTo(lx + lw + s*0.14, bt);
+      c.lineTo(lx + lw + s*0.1, bt + bh); c.lineTo(lx - s*0.08, bt + bh + s*0.03);
+      c.closePath(); c.fill(); c.globalAlpha = 1;
+    }
+    if (T==='eink') { c.fillStyle = hl; c.globalAlpha = .55; c.fillRect(lx-4, y - s*0.78, lw+8, s*1.02); c.globalAlpha = 1; }
+    if (T==='typewriter') { c.fillStyle = hl; c.globalAlpha = .8; c.fillRect(lx, y + s*0.16, lw, Math.max(3, s*0.08)); c.globalAlpha = 1; }
+    let dx = 0, dy = 0;
+    if (T==='typewriter') { dx = (jit()-0.5)*u*0.004; dy = (jit()-0.5)*u*0.003; c.globalAlpha = 0.88 + jit()*0.12; }
+    c.fillStyle = P.fg; c.fillText(line, x + dx, y + dy); c.globalAlpha = 1;
+    y += step;
+  }
+
+  // book + author
+  let my = metaBase;
+  if (showA) {
+    c.fillStyle = P.sub; c.font = `500 ${Math.round(metaSize*.78)}px "JetBrains Mono", monospace`;
+    c.fillText((center ? '' : '— ') + author.toUpperCase().slice(0,60), x, my); my -= metaSize*1.35;
+  }
+  if (showT) {
+    c.fillStyle = T==='poster' ? '#15171C' : P.fg; c.font = `italic 400 ${titleSize}px "Newsreader", Georgia, serif`;
+    for (let i = titleLines.length - 1; i >= 0; i--) { c.fillText(titleLines[i], x, my); my -= titleSize*1.25; }
+  }
+  if (T==='night') { c.fillStyle = hl; c.fillRect(left, R.y + R.h - pad - metaH - handleH - u*0.01, u*0.12, Math.max(4, u*0.006)); }
+  if (T==='eink') {
+    c.fillStyle = P.sub; c.fillRect(pad, H - pad*0.55, W-2*pad, 2);
+    c.fillRect(pad, H - pad*0.55 - 3, (W-2*pad)*0.62, 8);
+  }
+  if (S.handle) {
+    c.fillStyle = P.sub; c.font = `500 ${Math.round(metaSize*.75)}px "JetBrains Mono", monospace`;
+    c.textAlign = center ? 'center' : 'right';
+    c.fillText(S.handle.slice(0,40), center ? cx : R.x + R.w - pad, handleY);
+  }
+  if (rotated) c.restore();
+}
+
+function caption(platform){
+  const it = S.sel; const text = (S.editText || cleanText(it.text)).trim();
+  const by = [it.author, it.book].filter(Boolean).join(', ');
+  const tags = '#bookquotes #reading #booktok #kobo';
+  let cap = `“${text}”\n— ${by}\n\n${tags}`;
+  if (platform==='x' || platform==='threads') {
+    const lim = platform==='x' ? 270 : 490;
+    const tail = `\n— ${by}`;
+    let body = `“${text}”`;
+    if ((body+tail).length > lim) body = `“${text.slice(0, lim - tail.length - 3).trim()}…”`;
+    cap = body + tail;
+  }
+  return cap;
+}
+async function copy(text){
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch(e) { const ta = $('#caption'); ta.hidden=false; ta.value=text; ta.focus(); ta.select(); return false; }
+}
+const toBlob = () => new Promise(r => $('#card').toBlob(r, 'image/png'));
+function fileName(){ const b = (S.sel.book||'quote').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40).toLowerCase(); return `${b||'quote'}-${S.fmt}.png`; }
+
+async function saveImage(){
+  const blob = await toBlob(); const name = fileName();
+  try { // native share sheet where the viewer allows it
+    const f = new File([blob], name, {type:'image/png'});
+    if (navigator.canShare && navigator.canShare({files:[f]})) { await navigator.share({files:[f]}); return 'shared'; }
+  } catch(e) { if (e && e.name==='AbortError') return 'cancelled'; }
+  // iPhone/iPad Safari ignores downloads of images; show it to press-and-hold instead
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent)) { showImageFallback(blob); return 'preview'; }
+  saveBlob(blob, name); return 'saved';
+}
+function showImageFallback(blob){
+  const url = URL.createObjectURL(blob);
+  const n = $('#next'); n.hidden = false;
+  n.innerHTML = `<strong>Press and hold the image to save it</strong> (right-click → Save image on a computer).<img class="preview-img" src="${url}" alt="Quote card">`;
+}
+async function shareTo(p){
+  if (p==='tiktok') S.fmt='story';
+  else if (p==='x') S.fmt='wide';
+  else if (p==='threads') S.fmt = S.fmt==='story' ? 'story' : 'post';
+  else if (p==='instagram' && S.fmt==='wide') S.fmt='post';
+  store('fmt', S.fmt); renderStudio();
+  const cap = caption(p);
+  const copied = await copy(cap);
+  const res = await saveImage();
+  if (res==='cancelled') return;
+  const n = $('#next'); const keepImg = res==='preview' ? n.innerHTML : '';
+  const enc = encodeURIComponent(cap);
+  const steps = {
+    instagram:`Open Instagram, tap <b>+</b>, choose the saved image as a Post or Story, and paste the caption.`,
+    tiktok:`Open TikTok, tap <b>+</b> → <b>Upload</b> → <b>Photos</b>, pick the saved image, and paste the caption.`,
+    threads:`Open the Threads composer, attach the saved image, and the caption is filled in for you: <a href="https://www.threads.net/intent/post?text=${enc}" target="_blank" rel="noopener">Open Threads</a>`,
+    x:`Open the X composer, attach the saved image, and the caption is filled in for you: <a href="https://x.com/intent/post?text=${enc}" target="_blank" rel="noopener">Open X</a>`,
+  }[p];
+  n.hidden = false;
+  n.innerHTML = `<span>${res==='saved'||res==='shared'?'Image ready. ':''}${copied?'Caption copied. ':'Caption is selected below; copy it. '}${steps}</span>${keepImg}`;
+}
+
+/* ---------- Kobo import ---------- */
+let sqlPromise;
+function loadSql(){
+  if (!sqlPromise) sqlPromise = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-asm.js';
+    s.onload = () => window.initSqlJs().then(res, rej);
+    s.onerror = () => rej(new Error('Could not load the database reader. Check your connection and try again.'));
+    document.head.appendChild(s);
+  });
+  return sqlPromise;
+}
+function readKobo(SQL, bytes){
+  const db = new SQL.Database(bytes);
+  const cols = new Set((db.exec("PRAGMA table_info(Bookmark)")[0]?.values || []).map(r => r[1]));
+  if (!cols.size) throw new Error('This file has no highlights table. Pick KoboReader.sqlite from the .kobo folder.');
+  const sel = [
+    'b.BookmarkID AS id', 'b.Text AS text', 'b.VolumeID AS vol',
+    cols.has('Annotation') ? 'b.Annotation AS note' : 'NULL AS note',
+    cols.has('DateCreated') ? 'b.DateCreated AS created' : 'NULL AS created',
+    cols.has('Color') ? 'b.Color AS color' : 'NULL AS color',
+    'c.Title AS title', 'c.Attribution AS author'];
+  const where = ["b.Text IS NOT NULL", "TRIM(b.Text) <> ''"];
+  if (cols.has('Hidden')) where.push("(b.Hidden IS NULL OR b.Hidden = 'false' OR b.Hidden = 0)");
+  const q = `SELECT ${sel.join(',')} FROM Bookmark b LEFT JOIN content c ON c.ContentID = b.VolumeID WHERE ${where.join(' AND ')}`;
+  const res = db.exec(q)[0]; db.close();
+  if (!res) return [];
+  return res.values.map(r => Object.fromEntries(res.columns.map((k,i)=>[k,r[i]]))).map(r => {
+    let book = r.title;
+    if (!book && r.vol) book = decodeURIComponent(String(r.vol).split('/').pop()).replace(/\.(kepub\.)?epub$|\.pdf$/i,'').replace(/_ /g,': ').replace(/_+/g,' ');
+    return {
+      id: safeId(r.id), text: String(r.text).replace(/\s+\n/g,'\n').replace(/[ \t]+/g,' ').trim(),
+      note: r.note ? String(r.note).trim() : '', book: book || 'Unknown book', author: r.author || '',
+      color: KOBO_COLOR[Number(r.color)] || 'yellow', created: r.created || new Date().toISOString(),
+      fav:false, source:'kobo',
+    };
+  });
+}
+/* ---------- My Clippings.txt (Xteink CrossPoint, Kindle) ---------- */
+function hash(s){ let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h>>>0).toString(36); }
+function parseClippings(txt){
+  const out = [], notes = [];
+  for (const block of txt.replace(/\r/g, '').split(/^﻿?={5,}\s*$/m)) {
+    const lines = block.split('\n').map(l => l.replace(/^﻿/, '').trimEnd());
+    while (lines.length && !lines[0].trim()) lines.shift();
+    if (lines.length < 3) continue;
+    const head = lines[0].trim(), meta = lines[1].trim();
+    const text = lines.slice(2).join('\n').trim();
+    if (!text || /bookmark/i.test(meta)) continue;
+    let book = head, author = '';
+    const m = head.match(/^(.*?)\s*\(([^()]*)\)\s*$/);
+    if (m && m[1].trim()) { book = m[1].trim(); author = m[2].trim(); }
+    const parts = author.split(',');
+    if (parts.length === 2 && !/\b(jr|sr|phd|md|rn)\b/i.test(parts[1])) author = parts[1].trim() + ' ' + parts[0].trim(); // "Last, First"
+    const dm = meta.match(/Added on\s+(?:[A-Za-z]+,\s*)?(.+)$/i);
+    let created = dm ? new Date(dm[1]) : null;
+    if (!created || isNaN(created)) created = new Date();
+    const loc = (meta.match(/(?:location|loc\.?|page)\s*([\d-]+)/i) || [])[1] || '';
+    const rec = {book, author, loc, text, created: created.toISOString()};
+    (/\bnote\b/i.test(meta) ? notes : out).push(rec);
+  }
+  for (const n of notes) { // a note sits next to the highlight it belongs to
+    const end = n.loc.split('-').pop();
+    const h = out.find(o => o.book === n.book && end && o.loc.split('-').pop() === end);
+    if (h) h.note = n.text;
+  }
+  const seen = new Set();
+  return out.filter(r => { const k = r.book + '|' + r.text; if (seen.has(k)) return false; seen.add(k); return true; })
+    .map(r => ({id: 'x_' + hash(r.book + '|' + r.text), text: r.text, note: r.note || '', book: r.book || 'Unknown book', author: r.author,
+      color: 'yellow', created: r.created, fav: false, source: 'clippings'}));
+}
+/* ---------- Marginalia backup (.json) ---------- */
+function parseBackup(txt){
+  let data;
+  try { data = JSON.parse(txt); } catch(e) { throw new Error('This backup file is damaged and could not be read.'); }
+  const list = Array.isArray(data) ? data : (data.highlights || []);
+  return list.filter(r => r && r.text).map(r => ({
+    id: r.id || ('x_' + hash((r.book||'') + '|' + r.text)), text: String(r.text), note: r.note || '', book: r.book || 'Unknown book',
+    author: r.author || '', color: r.color || 'yellow', created: r.created || new Date().toISOString(), fav: !!r.fav, source: r.source || 'backup'}));
+}
+async function importFile(file){
+  const box = $('#impProgress'), msg = $('#impMsg'), bar = $('#impBar');
+  box.hidden = false; bar.style.width = '5%'; msg.textContent = `Reading ${file.name}…`;
+  try {
+    box.scrollIntoView({block:'nearest'});
+    const head = String.fromCharCode(...new Uint8Array(await file.slice(0, 16).arrayBuffer()));
+    let rows;
+    if (/^\s*[\[{]/.test(head)) {
+      rows = parseBackup(await file.text());
+      bar.style.width = '20%';
+    } else if (head.startsWith('SQLite format 3')) {
+      const [SQL, buf] = await Promise.all([loadSql(), file.arrayBuffer()]);
+      bar.style.width = '20%';
+      rows = readKobo(SQL, new Uint8Array(buf));
+    } else {
+      rows = parseClippings(await file.text());
+      bar.style.width = '20%';
+      if (!rows.length) throw new Error('No highlights found in this file. Pick My Clippings.txt from the top level of the SD card.');
+    }
+    const have = new Set(S.items.map(i=>i.id));
+    const fresh = rows.filter(r => !have.has(r.id));
+    const books = new Set(rows.map(r=>r.book)).size;
+    msg.textContent = `Found ${rows.length} highlights in ${books} books · ${fresh.length} new. Saving…`;
+    if (S.mode==='cloud') {
+      await upsertMany(fresh, p => { bar.style.width = (20 + 80*p) + '%'; });
+      await loadCloud();
+    } else { S.items.push(...fresh); store('items', S.items); render(); }
+    bar.style.width = '100%';
+    msg.textContent = fresh.length ? `Done. Added ${fresh.length} new highlights from ${books} books.` : `Your library is already up to date (${rows.length} highlights).`;
+    toast(fresh.length ? `Added ${fresh.length} highlights` : 'No new highlights');
+    if (fresh.length) setTimeout(()=>setView('library'), 1200);
+  } catch(e) {
+    console.error(e); bar.style.width = '0';
+    msg.textContent = (e && e.message && !/^\d/.test(e.message) ? e.message : 'That file could not be read.') + ' Pick KoboReader.sqlite (Kobo, ejected first) or My Clippings.txt (Xteink X4 Pro).';
+  }
+}
+
+/* ---------- views & events ---------- */
+function setView(v){ S.view = v; render(); window.scrollTo({top:0}); }
+function render(){
+  setStatus();
+  const wide = isWide();
+  $('#pane-library').hidden = !(S.view==='library' || (wide && S.view==='studio'));
+  $('#pane-studio').hidden = !(S.view==='studio' || (wide && S.view==='library'));
+  $('#pane-import').hidden = S.view!=='import';
+  $('#main').classList.toggle('split', S.view!=='import');
+  document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.view===S.view));
+  renderFilters(); renderList();
+  if (!$('#pane-studio').hidden) renderStudio();
+}
+document.querySelector('nav.tabs').addEventListener('click', e => { const b = e.target.closest('button[data-view]'); if (b) setView(b.dataset.view); });
+document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) setView(g.dataset.goto); });
+matchMedia('(min-width:960px)').addEventListener('change', render);
+$('#q').addEventListener('input', e => { S.q = e.target.value; renderList(); });
+$('#book').addEventListener('change', e => { S.book = e.target.value; renderList(); });
+$('#sort').addEventListener('change', e => { S.sort = e.target.value; renderList(); });
+$('#colorFilter').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if ('fav' in b.dataset) S.favOnly = !S.favOnly; else { S.color = b.dataset.color; if (!S.color) S.favOnly = false; }
+  renderFilters(); renderList();
+});
+$('#shuffle').addEventListener('click', () => { const r = filtered(); if (r.length) selectItem(r[Math.floor(Math.random()*r.length)]); });
+$('#list').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const id = b.closest('.item').dataset.id; const it = all().find(i=>i.id===id); if (!it) return;
+  const a = b.dataset.act;
+  try {
+    if (a==='make') selectItem(it);
+    else if (a==='fav') await patchItem(id, {fav: !it.fav});
+    else if (a==='copy') { await copy(`“${cleanText(it.text)}” — ${[it.author,it.book].filter(Boolean).join(', ')}`); toast('Copied'); }
+    else if (a==='del') { S.confirmDel = id; renderList(); }
+    else if (a==='delno') { S.confirmDel = null; renderList(); }
+    else if (a==='delyes') { S.confirmDel = null; await removeItem(id); toast('Highlight deleted'); }
+  } catch(err) { toast('That change did not save. Check your connection and try again.'); }
+});
+const studio = $('#pane-studio');
+studio.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const d = b.dataset;
+  if (d.fmt) { S.fmt = d.fmt; store('fmt', S.fmt); }
+  else if (d.tpl) { S.tpl = d.tpl; store('tpl', S.tpl); }
+  else if (d.font) { S.font = d.font; store('font', S.font); }
+  else if (d.hl) { S.hl = d.hl; }
+  else if (d.share) { shareTo(d.share); return; }
+  else return;
+  renderStudio();
+});
+$('#edit').addEventListener('input', e => { S.editText = e.target.value; draw(); });
+$('#handle').addEventListener('input', e => { S.handle = e.target.value; store('handle', S.handle); draw(); });
+$('#showBook').addEventListener('change', e => { S.showBook = e.target.value; store('showBook', S.showBook); draw(); });
+$('#saveImg').addEventListener('click', async () => { const r = await saveImage(); if (r==='saved') toast('Image saved'); });
+$('#copyCap').addEventListener('click', async () => { if (await copy(caption('instagram'))) toast('Caption copied'); });
+
+['#file', '#file2'].forEach(s => $(s).addEventListener('change', e => { const f = e.target.files[0]; if (f) importFile(f); e.target.value=''; }));
+document.querySelectorAll('.drop').forEach(drop => {
+  ['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) importFile(f); });
+});
+
+function renderMColors(){ $('#m-colors').innerHTML = COLORS.map(c=>`<button class="chip" type="button" data-mc="${c.k}" aria-pressed="${S.mColor===c.k}"><span class="dot" style="background:var(${c.css})"></span>${c.name}</button>`).join(''); }
+$('#m-colors').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { S.mColor = b.dataset.mc; renderMColors(); } });
+$('#manual').addEventListener('submit', async e => {
+  e.preventDefault();
+  const text = $('#m-text').value.trim(); if (!text) return;
+  const item = {id: safeId('m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)), text, book: $('#m-book').value.trim() || 'Unknown book', author: $('#m-author').value.trim(), color:S.mColor, created:new Date().toISOString(), note:'', fav:false, source:'manual'};
+  try { await putItem(item); $('#manual').reset(); toast('Added to your library'); }
+  catch(err) { toast('That highlight did not save. Try again.'); }
+});
+$('#backup').addEventListener('click', async () => {
+  if (!S.items.length) { toast('Nothing to back up yet'); return; }
+  const data = JSON.stringify({app:'marginalia', version:1, exported:new Date().toISOString(), highlights:S.items}, null, 2);
+  saveBlob(new Blob([data], {type:'application/json'}), `marginalia-backup-${new Date().toISOString().slice(0,10)}.json`);
+  toast('Backup saved');
+});
+
+renderMColors();
+document.fonts?.ready?.then(() => draw());
+Promise.all(['500 40px "Newsreader"','italic 400 40px "Newsreader"','500 40px "Instrument Sans"','500 40px "JetBrains Mono"'].map(f=>document.fonts.load(f))).then(draw).catch(()=>{});
+boot();
+})();
+</script>
+</body>
+</html>
